@@ -32,8 +32,7 @@ A bare-metal embedded firmware system built on the **NXP LPC2148 (ARM7)** microc
 | **Alert Buzzer** | `P0.19` | Digital GPIO output (`HIGH` = Alert) |
 
 ---
-BLOCK DIAGRAM
-docs/block_dagram.jpeg
+![Block Diagram](docs/block_dagram.jpeg)
 
 ## 🖥️ Sample UART Serial Output
 ```text
