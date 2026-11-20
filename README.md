@@ -1,4 +1,55 @@
-🏭 Industrial Environment Monitoring & Real-Time Data Logger (ARM7 LPC2148)A bare-metal embedded firmware system built on the NXP LPC2148 (ARM7) microcontroller for continuous industrial temperature monitoring, threshold-based audio alarming, live LCD telemetry, and automated serial data logging.🔌 System Block Diagram🔄 Firmware Execution Flowchart✨ Key FeaturesPrecision Analog Temperature Sensing: Interfaces with an LM35 temperature sensor (10 mV/°C) through the 10-bit on-chip ADC (AIN2 / P0.29 at 3 MHz ADC clock).Interactive Setpoint Configuration: Uses a 4×4 Matrix Keypad and 16×2 Alphanumeric LCD (supporting * for backspace and # for confirmation) to configure the high-temperature threshold at boot.Interrupt-Driven RTC Reconfiguration: Pressing the external interrupt push button (EINT1 on P0.3) pauses normal monitoring and opens an interactive LCD/keypad menu to update Time (HH:MM:SS) and Date (DD/MM/YYYY) live.Threshold-Based Audio Alarming: Activates an industrial buzzer on P0.19, flashes BUZZER ALERT!! on the LCD, and transmits an instant [!!] TEMPERATURE ALERT warning over UART whenever temperature exceeds the setpoint.Automated UART0 Data Logger: Transmits formatted timestamped temperature logs to a PC serial terminal (9600 bps, 8N1) once every minute (rsec == 0).📌 Hardware Pinout & Peripheral MappingPeripheral / ModuleLPC2148 Pin(s)Function / DescriptionLM35 Temp SensorP0.29 (AIN2)Analog temperature voltage input (10 mV/°C)16×2 LCD Data BusP0.8 – P0.158-bit parallel data interface (D0–D7)16×2 LCD ControlP0.16, P0.18, P0.17RS (Register Select), RW (Read/Write), EN (Enable)4×4 Keypad RowsP1.16 – P1.19Row scan outputs (ROW0–ROW3)4×4 Keypad ColumnsP1.20 – P1.23Column sense inputs (COL0–COL3)UART0 SerialP0.0 (TXD0), P0.1 (RXD0)Serial terminal data logger (9600 baud, 8N1)Push ButtonP0.3 (EINT1)Edge-triggered external interrupt for RTC setupAlert BuzzerP0.19Digital GPIO output (HIGH = Alert Active)🖥️ Sample UART Serial Terminal Output📄 Full captured terminal log: uart_log.txt============================================================
+# 🏭 Industrial Environment Monitoring & Real-Time Data Logger (ARM7 LPC2148)
+
+![MCU](https://img.shields.io/badge/MCU-NXP%20LPC2148%20(ARM7TDMI--S)-blue)
+![Language](https://img.shields.io/badge/Language-Embedded%20C-orange)
+![Clock](https://img.shields.io/badge/CCLK-60%20MHz%20%7C%20PCLK%2015%20MHz-green)
+![Protocol](https://img.shields.io/badge/Interfaces-ADC%20%7C%20UART0%20%7C%20RTC%20%7C%20EINT1-lightgrey)
+
+A bare-metal embedded firmware system built on the **NXP LPC2148 (ARM7)** microcontroller for continuous industrial temperature monitoring, threshold-based audio alarming, real-time LCD telemetry, and automated serial data logging[cite: 10, 51].
+
+---
+
+## 🔌 System Block Diagram
+
+![System Block Diagram](docs/circuit.jpeg)
+
+---
+
+## 🔄 Firmware Execution Flowchart
+
+![Firmware Flowchart](docs/block_dagram.jpeg)
+
+---
+
+## ✨ Key Features
+* **Precision Analog Sensing:** Interfaces with an **LM35** temperature sensor via the on-chip 10-bit ADC (`3 MHz` ADC clock) with real-time Celsius conversion (`10 mV/°C`)[cite: 2, 32].
+* **Interactive Threshold Configuration:** Uses a **4×4 Matrix Keypad** and **16×2 Alphanumeric LCD** with backspace (`*`) and confirmation (`#`) handling to set custom temperature limits at boot[cite: 10, 16].
+* **Interrupt-Driven RTC Updates:** Uses **External Interrupt 1 (EINT1)** on `P0.3` to pause normal monitoring and allow live reconfiguration of Date and Time (`HH:MM:SS` & `DD/MM/YYYY`) via an interactive LCD menu[cite: 10, 14, 34].
+* **Automated UART0 Telemetry:** Logs formatted timestamped temperature reports to a PC serial terminal (`9600 bps, 8N1`) once every minute and triggers instant `[!!] TEMPERATURE ALERT` banners during threshold breaches[cite: 10, 44].
+* **Audio Alarm System:** Activates an industrial buzzer on `P0.19` whenever ambient temperature exceeds the configured setpoint[cite: 10].
+
+---
+
+## 📌 Hardware Pinout & Peripheral Mapping
+
+| Peripheral | LPC2148 Pin(s) | Function / Description |
+| :--- | :--- | :--- |
+| **LM35 Temp Sensor** | `P0.29` (`AIN2`) | Analog voltage input (`10 mV/°C`)[cite: 2, 32] |
+| **16×2 LCD Data Bus** | `P0.8 – P0.15` | 8-bit parallel data interface (`D0–D7`)[cite: 26] |
+| **16×2 LCD Control** | `P0.16`, `P0.18`, `P0.17` | `RS`, `RW`, and `EN` control lines[cite: 26] |
+| **4×4 Keypad Rows** | `P1.16 – P1.19` | Row scan outputs (`ROW0–ROW3`)[cite: 18] |
+| **4×4 Keypad Columns** | `P1.20 – P1.23` | Column sense inputs (`COL0–COL3`)[cite: 18] |
+| **UART0 Serial** | `P0.0` (`TXD0`), `P0.1` (`RXD0`) | Serial data logger (`9600 baud`)[cite: 44] |
+| **External Interrupt** | `P0.3` (`EINT1`) | Edge-triggered interrupt for RTC setup[cite: 14] |
+| **Alert Buzzer** | `P0.19` | Digital GPIO output (`HIGH` = Alert)[cite: 10] |
+
+---
+
+## 🖥️ Sample UART Serial Output
+📄 Full captured log available in [`uart_log.txt`](uart_log.txt)[cite: 49]
+
+```text
+============================================================
        INDUSTRIAL ENVIRONMENT MONITORING SYSTEM
           ARM7 LPC2148 | REAL-TIME DATA LOGGER
 ============================================================
@@ -33,4 +84,3 @@ SYSTEM STATUS : MONITORING ACTIVE
  DATE         TIME          TEMPERATURE
  ------------------------------------------------------------
  10/11/2026    03:56:00       27.7 ° C
-🛠️ Build & Simulation InstructionsOpen Keil µVision and create a new project targeting NXP LPC2148.Add all .c source files to your Source Group and add the header directory to Options for Target → C/C++ → Include Paths.Enable Create HEX File under Options for Target → Output and build the project (F7).Load the generated .hex file into Proteus ISIS (with a 12 MHz crystal and Virtual Terminal set to 9600 baud) or flash it onto an LPC2148 development board using Flash Magic.
