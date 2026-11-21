@@ -188,4 +188,3 @@ SYSTEM STATUS : MONITORING ACTIVE
 - **Wireless IoT Telemetry (`ESP8266` / `ESP32` / `GSM`):** Bridge `UART0` to a Wi-Fi or GSM module to push live telemetry to an MQTT/cloud dashboard and send SMS/email alerts during threshold breaches.
 - **Multi-Sensor Industrial Expansion:** Utilize additional `ADC0` channels (`AIN0`, `AIN1`, `AIN3`) to monitor humidity (`DHT22`/`HIH-4000`), gas/smoke (`MQ-2`), and multi-zone temperatures simultaneously.
 - **Automated Relay Actuation:** Add an opto-isolated relay driver to automatically turn on industrial exhaust fans or cooling units alongside the audio buzzer.
-- 
