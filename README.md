@@ -20,20 +20,20 @@ A bare-metal embedded firmware system built on the **NXP LPC2148 (ARM7)** microc
 
 ## 🔌 System Block Diagram
 
-![System Block Diagram](docs/circuit.jpeg)
+![System Block Diagram](circuit.jpeg)
 
 ---
 
 ## 🔄 Firmware Execution Flowchart
 
-![Firmware Flowchart](docs/block_dagram.jpeg)
+![Firmware Flowchart](block_dagram.jpeg)
 
 ---
 
 ## 📸 Hardware Showcase
 
 <p align="center">
-  <img src="docs/hardware_outputs.png" alt="LPC2148 Industrial Environment Monitor Operational States" width="100%">
+  <img src="hardware_outputs.png" alt="LPC2148 Industrial Environment Monitor Operational States" width="100%">
 </p>
 
 - **Buzzer Alert:** Activates audio alarm and displays `BUZZER ALERT!!` on the 16×2 LCD when ambient temperature exceeds the configured setpoint.
@@ -53,59 +53,43 @@ Microcontrollers communicate with the outside world through built-in hardware bl
 - **Beginner Concept:** A microcontroller only understands binary numbers (`0`s and `1`s), whereas heat is a continuous analog quantity. The **LM35** converts temperature into a linear voltage (`10 mV` per `1 °C`), and the LPC2148's built-in **ADC (Analog-to-Digital Converter)** translates that voltage into a 10-bit integer (`0` to `1023`).
 - **Register & Signal Details:** `P0.29` is configured as `AIN2` via `PINSEL1`. The ADC clock runs at `3 MHz` (`PCLK = 15 MHz`, `CLKDIV = 4`). Reading `ADDR2` (`(ADDR2 >> 6) & 0x3FF`) yields the digital count converted via `Temp (°C) = (ADC_Value × 3.3 / 1023.0) × 100.0`.
 
-```text
-  [ Ambient Heat ] ──▶ [ LM35 Sensor ] ──(10 mV/°C Analog)──▶ [ LPC2148 ADC (P0.29) ] ──▶ [ Digital Value: 28°C ]
-```
+![LM35 and ADC Block Diagram](adc_lm35.png)
 
 ### 2. 16×2 Alphanumeric LCD (`P0.8–P0.15`, `P0.16–P0.18`)
 - **Beginner Concept:** A two-line screen (16 characters per row) that acts as the local dashboard for prompts, menus, live readings, and alarm messages.
 - **Register & Signal Details:** Operates in **8-bit parallel mode** using `P0.8–P0.15` (`D0–D7`) for ASCII/command bytes and `P0.16` (`RS`), `P0.18` (`RW`), and `P0.17` (`EN`) for control signaling (`RS = 0` for commands like `0x38`/`0x01`, `RS = 1` for character data).
 
-```text
-  [ LPC2148 ] ══(8-Bit Data Bus: P0.8–P0.15)══▶ [ 16×2 LCD ] ──▶ Displays Time, Temp & Alerts
-              ──(Control: RS, RW, EN)──────────▶
-```
+![16x2 LCD Block Diagram](lcd_16x2.png)
 
 ### 3. 4×4 Matrix Keypad (`P1.16–P1.23`)
 - **Beginner Concept:** A 16-key grid arranged into **4 rows** and **4 columns** so the microcontroller can read 16 buttons using only 8 GPIO pins instead of 16.
 - **Register & Signal Details:** Port 1 pins `P1.16–P1.19` act as row scan outputs and `P1.20–P1.23` act as column sense inputs with software debouncing. Supports numeric entry (`0–9`), `*` for backspace/clear, and `#` for confirmation.
 
-```text
-  [ LPC2148 ] ──(Activates Row 1..4)──▶ [ 4×4 Keypad Grid ] ──(Reads Col 1..4)──▶ [ Detects Pressed Key ]
-```
+![4x4 Keypad Block Diagram](keypad_4x4.png)
 
 ### 4. On-Chip Real-Time Clock (`RTC`)
 - **Beginner Concept:** A built-in hardware digital clock inside the LPC2148 chip that tracks seconds, minutes, hours, day, month, and year continuously in the background.
 - **Register & Signal Details:** Driven by a `1 Hz` timebase generated from `PCLK = 15 MHz` using prescaler registers `PREINT` and `PREFRAC`, and enabled via `CCR`. Live values are read directly from `SEC`, `MIN`, `HOUR`, `DOM`, `MONTH`, and `YEAR` registers.
 
-```text
-  [ 1 Hz Clock Tick ] ──▶ [ Internal RTC Counters (HH:MM:SS | DD/MM/YYYY) ] ──▶ [ Timestamped Logs & Display ]
-```
+![On-Chip RTC Block Diagram](rtc_block.png)
 
 ### 5. External Interrupt 1 (`EINT1` on `P0.3`) & VIC
 - **Beginner Concept:** An "emergency doorbell" for the processor. Instead of repeatedly checking a button in a loop, the CPU runs normally until the switch is pressed.
 - **Register & Signal Details:** `P0.3` is assigned to `EINT1` via `PINSEL0`, configured as falling-edge triggered (`EXTMODE`, `EXTPOLAR`), and registered in the **Vectored Interrupt Controller (`VIC`)**. Triggering `EINT1_ISR` pauses monitoring and launches the `1:TIME 2:DATE 3:ALL 4:EXIT` menu.
 
-```text
-  [ Switch Press on P0.3 ] ──(Triggers EINT1)──▶ [ Pauses Main Loop ] ──▶ [ Opens RTC Setup Menu ]
-```
+![External Interrupt EINT1 Block Diagram](eint1_vic.png)
 
 ### 6. UART0 Serial Interface (`TXD0` / `P0.0`, `RXD0` / `P0.1`)
 - **Beginner Concept:** A two-wire serial communication channel that streams formatted text reports from the board to a PC screen.
 - **Register & Signal Details:** Configured for **9600 bps, 8N1** (`U0LCR = 0x83`, `U0DLL = 97`, `U0DLM = 0` at `15 MHz PCLK`, then `U0LCR = 0x03`). Logic levels are shifted via an onboard **MAX232** transceiver over a DB9 serial cable.
 
-```text
-  [ LPC2148 (TXD0) ] ──▶ [ MAX232 Level Shifter ] ──(DB9 Cable)──▶ [ PC Serial Terminal Log ]
-```
+![UART0 Serial Interface Block Diagram](uart0_serial.png)
 
 ### 7. Industrial Audio Buzzer (`GPIO` on `P0.19`)
 - **Beginner Concept:** A digital alarm output controlled like an electronic ON/OFF switch by a single GPIO pin.
 - **Register & Signal Details:** Configured as an output (`IODIR0 |= (1 << 19)`). Driven `HIGH` (`IOSET0 = (1 << 19)`) when `Temperature > Setpoint` and cleared `LOW` (`IOCLR0 = (1 << 19)`) once temperature drops back within safe limits.
 
-```text
-  [ Temp > Setpoint? ] ──(YES)──▶ [ Pin P0.19 = HIGH ] ──▶ [ 🔊 Buzzer ON + LCD Warning ]
-                       ──(NO)───▶ [ Pin P0.19 = LOW  ] ──▶ [ 🔇 Buzzer OFF ]
-```
+![Industrial Audio Buzzer Block Diagram](buzzer_gpio.png)
 
 ---
 
@@ -204,3 +188,4 @@ SYSTEM STATUS : MONITORING ACTIVE
 - **Wireless IoT Telemetry (`ESP8266` / `ESP32` / `GSM`):** Bridge `UART0` to a Wi-Fi or GSM module to push live telemetry to an MQTT/cloud dashboard and send SMS/email alerts during threshold breaches.
 - **Multi-Sensor Industrial Expansion:** Utilize additional `ADC0` channels (`AIN0`, `AIN1`, `AIN3`) to monitor humidity (`DHT22`/`HIH-4000`), gas/smoke (`MQ-2`), and multi-zone temperatures simultaneously.
 - **Automated Relay Actuation:** Add an opto-isolated relay driver to automatically turn on industrial exhaust fans or cooling units alongside the audio buzzer.
+- 
