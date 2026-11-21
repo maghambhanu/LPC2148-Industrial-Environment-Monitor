@@ -85,7 +85,7 @@ flowchart TD
 
 ## 6. Hardware Showcase
 
-![Hardware Showcase](docs/hardware.png)
+![Hardware Showcase](docs/harware.jpeg)
 
 - **Buzzer Alert:** Displays `BUZZER ALERT!!` on the 16×2 LCD and activates the buzzer when temperature exceeds the setpoint.
 - **Date Input:** Keypad sub-menu (`1:DD 2:MM 3:YY 4:ALL 5:BACK 6:E`) for updating individual or full RTC date fields.
