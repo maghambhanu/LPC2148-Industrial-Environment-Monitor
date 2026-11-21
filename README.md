@@ -85,7 +85,7 @@ flowchart TD
 
 ## 6. Hardware Showcase
 
-![Hardware Showcase](docs/hardware_outputs.jpeg)
+![Hardware Showcase](docs/hardware_outputs.png)
 
 - **Buzzer Alert:** Displays `BUZZER ALERT!!` on the 16×2 LCD and activates the buzzer when temperature exceeds the setpoint.
 - **Date Input:** Keypad sub-menu (`1:DD 2:MM 3:YY 4:ALL 5:BACK 6:E`) for updating individual or full RTC date fields.
@@ -361,8 +361,6 @@ flowchart TD
 7. **Live RTC Interrupt Handling:** If `EINT1` (`P0.3`) is pressed at any time, pause monitoring, log `INTERUPPT RAISED....` on `UART0`, update date/time via the keypad menu, and resume normal monitoring.
 
 ### 9.2 Firmware Execution Flowchart
-
-![Firmware Execution Flowchart](docs/block_dagram.jpeg)
 
 ```mermaid
 flowchart TD
