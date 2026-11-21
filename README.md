@@ -27,75 +27,53 @@ A bare-metal embedded firmware system built on the **NXP LPC2148 (ARM7)** microc
   <img src="docs/hardware_outputs.png" alt="LPC2148 Industrial Environment Monitor Operational States" width="100%">
 </p>
 
-- **Buzzer Alert:** Activates audio alarm and displays `BUZZER ALERT!!` on the 16×2 LCD when ambient temperature exceeds the configured setpoint.
-- **Date Input:** Interactive keypad sub-menu (`1:DD 2:MM 3:YY 4:ALL 5:BACK 6:E`) for configuring individual or complete RTC date fields.
-- **Real-Time Clock:** Displays live RTC date, timestamp, and LM35 temperature reading (`6/11/2026 03:28:50 TM:28°`) during active monitoring.
-- **Time Input:** Interactive keypad sub-menu (`1:HH 2:MIN 3:SEC 4:ALL 5:BACK 6:E`) for setting hours, minutes, and seconds.
-- **Mode Selection:** Main interrupt-triggered RTC configuration menu (`1:TIME 2:DATE 3:ALL 4:EXIT`).
-- **Complete Hardware Setup:** Vector's ARM7 (LPC2148) development board wired to the 16×2 LCD, 4×4 matrix keypad, LM35 temperature sensor, buzzer, and DB9 UART0 serial interface.
+- **Buzzer Alert:** Activates audio alarm and displays `BUZZER ALERT!!` on the 16×2 LCD when ambient temperature exceeds the configured setpoint[cite: 1, 7].
+- **Date Input:** Interactive keypad sub-menu (`1:DD 2:MM 3:YY 4:ALL 5:BACK 6:E`) for configuring individual or complete RTC date fields[cite: 2, 7].
+- **Real-Time Clock:** Displays live RTC date, timestamp, and LM35 temperature reading (`6/11/2026 03:28:50 TM:28°`) during active monitoring[cite: 3, 7].
+- **Time Input:** Interactive keypad sub-menu (`1:HH 2:MIN 3:SEC 4:ALL 5:BACK 6:E`) for setting hours, minutes, and seconds[cite: 4, 7].
+- **Mode Selection:** Main interrupt-triggered RTC configuration menu (`1:TIME 2:DATE 3:ALL 4:EXIT`)[cite: 5, 7].
+- **Complete Hardware Setup:** Vector's ARM7 (LPC2148) development board wired to the 16×2 LCD, 4×4 matrix keypad, LM35 temperature sensor, buzzer, and DB9 UART0 serial interface[cite: 6, 7].
 
 ---
 
-## ✨ Key Features
-- **Precision Analog Sensing:** Interfaces with an **LM35** temperature sensor via the on-chip 10-bit ADC (`3 MHz` ADC clock) with real-time Celsius conversion (`10 mV/°C`).
-- **Interactive Threshold Configuration:** Uses a **4×4 Matrix Keypad** and **16×2 Alphanumeric LCD** with backspace (`*`) and confirmation (`#`) handling to set custom temperature limits at boot.
-- **Interrupt-Driven RTC Updates:** Uses **External Interrupt 1 (EINT1)** on `P0.3` to pause normal monitoring and allow live reconfiguration of Date and Time (`HH:MM:SS` & `DD/MM/YYYY`) via an interactive LCD menu.
-- **Automated UART0 Telemetry:** Logs formatted timestamped temperature reports to a PC serial terminal (`9600 bps, 8N1`) once every minute and triggers instant `[!!] TEMPERATURE ALERT` banners during threshold breaches.
-- **Audio Alarm System:** Activates an industrial buzzer on `P0.19` whenever ambient temperature exceeds the configured setpoint.
+## 🧩 Peripheral Interfacing Diagram
 
----
+```mermaid
+flowchart LR
+    subgraph INPUTS ["Input & Trigger Peripherals"]
+        LM35["🌡️ LM35 Temp Sensor<br/>(10 mV/°C Analog)"]
+        KEYPAD["⌨️ 4×4 Matrix Keypad<br/>(Rows: P1.16–P1.19 | Cols: P1.20–P1.23)"]
+        INT_BTN["🔘 RTC Setup Switch<br/>(Falling-Edge Trigger)"]
+    end
 
-## 📌 Hardware Pinout & Peripheral Mapping
+    subgraph MCU ["NXP LPC2148 (ARM7TDMI-S @ 60 MHz)"]
+        ADC["10-Bit ADC0<br/>(AIN2 / P0.29 | 3 MHz)"]
+        GPIO_KP["GPIO Port 1<br/>(Row Scan & Col Read)"]
+        VIC["VIC + EINT1<br/>(P0.3 Vectored IRQ)"]
+        RTC["On-Chip RTC<br/>(1 Hz Prescaled Clock)"]
+        CORE["ARM7 Core<br/>(Threshold & Control Logic)"]
+        GPIO_OUT["GPIO Port 0<br/>(LCD & Buzzer Control)"]
+        UART["UART0 Controller<br/>(9600 bps, 8N1)"]
+    end
 
-| Peripheral | LPC2148 Pin(s) | Function / Description |
-| :--- | :--- | :--- |
-| **LM35 Temp Sensor** | `P0.29` (`AIN2`) | Analog voltage input (`10 mV/°C`) |
-| **16×2 LCD Data Bus** | `P0.8 – P0.15` | 8-bit parallel data interface (`D0–D7`) |
-| **16×2 LCD Control** | `P0.16`, `P0.18`, `P0.17` | `RS`, `RW`, and `EN` control lines |
-| **4×4 Keypad Rows** | `P1.16 – P1.19` | Row scan outputs (`ROW0–ROW3`) |
-| **4×4 Keypad Columns** | `P1.20 – P1.23` | Column sense inputs (`COL0–COL3`) |
-| **UART0 Serial** | `P0.0` (`TXD0`), `P0.1` (`RXD0`) | Serial data logger (`9600 baud`) |
-| **External Interrupt** | `P0.3` (`EINT1`) | Edge-triggered interrupt for RTC setup |
-| **Alert Buzzer** | `P0.19` | Digital GPIO output (`HIGH` = Alert) |
+    subgraph OUTPUTS ["Output & Telemetry Peripherals"]
+        LCD["📟 16×2 Alphanumeric LCD<br/>(D0–D7: P0.8–P0.15 | RS/EN/RW: P0.16–P0.18)"]
+        BUZZER["🔔 Industrial Buzzer<br/>(P0.19 Digital Out)"]
+        PC["🖥️ PC Serial Terminal<br/>(TXD0: P0.0, RXD0: P0.1 via MAX232)"]
+    end
 
----
+    LM35 -->|"Analog Voltage"| ADC
+    KEYPAD <-->|"Matrix Scan"| GPIO_KP
+    INT_BTN -->|"Hardware IRQ"| VIC
 
-## 🖥️ Sample UART Serial Output
-📄 Full captured log available in [`uart_log.txt`](uart_log.txt)
+    ADC --> CORE
+    GPIO_KP --> CORE
+    VIC -->|"ISR Flag"| CORE
+    RTC <-->|"Date & Time"| CORE
 
-```text
-============================================================
-       INDUSTRIAL ENVIRONMENT MONITORING SYSTEM
-          ARM7 LPC2148 | REAL-TIME DATA LOGGER
-============================================================
+    CORE --> GPIO_OUT
+    CORE --> UART
 
- SYSTEM CONFIGURATION
- ------------------------------------------------------------
- Temperature Setpoint : 35.0 ° C
- Monitoring Status    : ACTIVE
- ------------------------------------------------------------
-
- [!!] TEMPERATURE ALERT
- ------------------------------------------------------------
- Alert Temperature : 52.5 ° C
- BUZZER STATUS : ACTIVATED
- ------------------------------------------------------------
-
- REAL-TIME SENSOR DATA
- ------------------------------------------------------------
- DATE         TIME          TEMPERATURE
- ------------------------------------------------------------
- 10/11/2026    03:55:00       30.9 ° C
-============================================================
-
-Time: 03:55:08 | INTERUPPT RAISED....
-Time : 03:55:20 | RTC UPDATED
-============================================================
-SYSTEM STATUS : MONITORING ACTIVE 
-============================================================
-
- REAL-TIME SENSOR DATA
- ------------------------------------------------------------
- DATE         TIME          TEMPERATURE
- ------------------------------------------------------------
- 10/11/2026    03:56:00       27.7 ° C
+    GPIO_OUT -->|"8-Bit Parallel"| LCD
+    GPIO_OUT -->|"HIGH / LOW"| BUZZER
+    UART -->|"DB9 Serial"| PC
